@@ -1,7 +1,32 @@
 import csv
 
-def read_penguin_data(filename):
-    data = []
-    with open("penguins.csv") as inFile:
+def read_penguin_data(file):
+    with open(file) as inFile:
         lines = inFile.readlines()
+    year_d = {}
+    lines = lines[1:]
+    for line in lines:
+        values = line.rstrip().split(',')
+        species = values[0]
+        flipper = values[4]
+        body_mass = values[5]
+        year = values[7]
 
+        try:
+            flipper = float(flipper)
+            body_mass = float(body_mass)
+            year = int(year)
+        except ValueError:
+            continue
+        values_d = {}
+        values_d["species"] = species
+        values_d["flipper_length_mm"] = flipper
+        values_d["body_mass_g"] = body_mass
+
+        if year not in year_d:
+            year_d[year] = []
+        year_d[year].append(values_d)
+
+    return year_d
+year_d = read_penguin_data("penguins.csv")
+print(year_d)
