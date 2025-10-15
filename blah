@@ -1,0 +1,7 @@
+import csv
+
+def read_penguin_data(filename):
+    data = []
+    with open("penguins.csv") as inFile:
+        lines = inFile.readlines()
+
