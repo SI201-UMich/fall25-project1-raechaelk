@@ -7,26 +7,117 @@ def read_penguin_data(file):
     lines = lines[1:]
     for line in lines:
         values = line.rstrip().split(',')
-        species = values[0]
-        flipper = values[4]
-        body_mass = values[5]
-        year = values[7]
-
+        
         try:
-            flipper = float(flipper)
-            body_mass = float(body_mass)
-            year = int(year)
-        except ValueError:
+            species = values[1].strip('"')  # Remove extra quotes
+            island = values[2].strip('"')
+            bill_length = values[3]
+            bill_depth = values[4]
+            flipper = float(values[5])
+            body_mass = float(values[6])
+            sex = values[7].strip('"')
+            year = int(values[8])
+          
+            values_d = {}
+            values_d["species"] = species
+            values_d["flipper_length_mm"] = flipper
+            values_d["body_mass_g"] = body_mass
+            
+            if year not in year_d:
+                year_d[year] = []
+            year_d[year].append(values_d)
+            
+        except (ValueError, IndexError) as e:
             continue
-        values_d = {}
-        values_d["species"] = species
-        values_d["flipper_length_mm"] = flipper
-        values_d["body_mass_g"] = body_mass
-
-        if year not in year_d:
-            year_d[year] = []
-        year_d[year].append(values_d)
-
+    
     return year_d
-year_d = read_penguin_data("penguins.csv")
-print(year_d)
+
+
+def calculate_avg_flipper_by_year(data):
+    avg_flipper = {}
+
+    for year, penguins in data.items():
+        total = 0
+        count = 0
+        for p in penguins:
+            total += p["flipper_length_mm"]
+            count += 1
+        avg_flipper[year] = round(total / count, 2)
+
+    return avg_flipper
+
+def calculate_avg_body_mass_by_year(data):
+    """Calculate average body mass per year."""
+    avg_mass = {}
+
+    for year, penguins in data.items():
+        total = 0
+        count = 0
+        for p in penguins:
+            total += p["body_mass_g"]
+            count += 1
+        avg_mass[year] = round(total / count, 2)
+
+    return avg_mass
+
+import csv
+
+def write_results_to_csv(results_flipper, results_mass):
+    """Write the calculation results to a CSV file."""
+    with open("penguin_results.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Year", "Avg Flipper Length (mm)", "Avg Body Mass (g)"])
+        for year in sorted(results_flipper.keys()):
+            writer.writerow([
+                year,
+                results_flipper[year],
+                results_mass.get(year, "N/A")
+            ])
+    print("Results written to penguin_results.csv")
+
+
+def test_calculate_avg_flipper_by_year():
+    sample_data = {
+        2007: [{"flipper_length_mm": 180.0, "body_mass_g": 3750.0},
+               {"flipper_length_mm": 190.0, "body_mass_g": 3800.0}],
+        2008: [{"flipper_length_mm": 200.0, "body_mass_g": 4000.0}]
+    }
+    # Regular case
+    result = calculate_avg_flipper_by_year(sample_data)
+    assert result[2007] == 185.0
+    assert result[2008] == 200.0
+
+    # Edge cases
+    assert isinstance(result, dict)
+    assert 2007 in result
+    print("All flipper tests passed.")
+
+
+def test_calculate_avg_body_mass_by_year():
+    sample_data = {
+        2007: [{"flipper_length_mm": 180.0, "body_mass_g": 3700.0},
+               {"flipper_length_mm": 190.0, "body_mass_g": 3900.0}],
+        2008: [{"flipper_length_mm": 200.0, "body_mass_g": 4100.0}]
+    }
+    result = calculate_avg_body_mass_by_year(sample_data)
+    # Regular
+    assert result[2007] == 3800.0
+    assert result[2008] == 4100.0
+
+    # Edge
+    assert isinstance(result, dict)
+    assert len(result) == 2
+    print("All body mass tests passed.")
+
+
+def main():
+    data = read_penguin_data("penguins.csv")
+    results_flipper = calculate_avg_flipper_by_year(data)
+    results_mass = calculate_avg_body_mass_by_year(data)
+    write_results_to_csv(results_flipper, results_mass)
+
+    print("Average Flipper Length per Year:", results_flipper)
+    print("Average Body Mass per Year:", results_mass)
+
+if __name__ == "__main__":
+    main()
