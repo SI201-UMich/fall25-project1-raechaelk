@@ -7,9 +7,8 @@ def read_penguin_data(file):
     lines = lines[1:]
     for line in lines:
         values = line.rstrip().split(',')
-        
         try:
-            species = values[1].strip('"')  # Remove extra quotes
+            species = values[1].strip('"') 
             island = values[2].strip('"')
             bill_length = values[3]
             bill_depth = values[4]
@@ -47,7 +46,6 @@ def calculate_avg_flipper_by_year(data):
     return avg_flipper
 
 def calculate_avg_body_mass_by_year(data):
-    """Calculate average body mass per year."""
     avg_mass = {}
 
     for year, penguins in data.items():
@@ -60,7 +58,7 @@ def calculate_avg_body_mass_by_year(data):
 
     return avg_mass
 
-import csv
+
 
 def write_results_to_csv(results_flipper, results_mass):
     """Write the calculation results to a CSV file."""
@@ -76,39 +74,121 @@ def write_results_to_csv(results_flipper, results_mass):
     print("Results written to penguin_results.csv")
 
 
-def test_calculate_avg_flipper_by_year():
-    sample_data = {
-        2007: [{"flipper_length_mm": 180.0, "body_mass_g": 3750.0},
-               {"flipper_length_mm": 190.0, "body_mass_g": 3800.0}],
-        2008: [{"flipper_length_mm": 200.0, "body_mass_g": 4000.0}]
-    }
-    # Regular case
-    result = calculate_avg_flipper_by_year(sample_data)
-    assert result[2007] == 185.0
-    assert result[2008] == 200.0
-
-    # Edge cases
-    assert isinstance(result, dict)
-    assert 2007 in result
-    print("All flipper tests passed.")
 
 
-def test_calculate_avg_body_mass_by_year():
-    sample_data = {
-        2007: [{"flipper_length_mm": 180.0, "body_mass_g": 3700.0},
-               {"flipper_length_mm": 190.0, "body_mass_g": 3900.0}],
-        2008: [{"flipper_length_mm": 200.0, "body_mass_g": 4100.0}]
-    }
-    result = calculate_avg_body_mass_by_year(sample_data)
-    # Regular
-    assert result[2007] == 3800.0
-    assert result[2008] == 4100.0
 
-    # Edge
-    assert isinstance(result, dict)
-    assert len(result) == 2
-    print("All body mass tests passed.")
 
+import unittest
+import os
+            
+class TestPenguinFunctions(unittest.TestCase):
+    def setUp(self):
+        self.sample_data = {
+            2007: [
+                {"species": "Adelie", "flipper_length_mm": 180.0, "body_mass_g": 3700.0},
+                {"species": "Adelie", "flipper_length_mm": 190.0, "body_mass_g": 3800.0},
+            ],
+            2008: [
+                {"species": "Gentoo", "flipper_length_mm": 200.0, "body_mass_g": 4100.0},
+                {"species": "Gentoo", "flipper_length_mm": 210.0, "body_mass_g": 4200.0},
+            ],
+        }
+
+    # ---------- read_penguin_data ----------
+    def test_read_penguin_data_type(self):
+        """Check that the function returns a dictionary."""
+        result = read_penguin_data("penguins.csv")
+        self.assertIsInstance(result, dict)
+
+    def test_read_penguin_data_years(self):
+        """Check that the years are integers."""
+        result = read_penguin_data("penguins.csv")
+        for year in result.keys():
+            self.assertIsInstance(year, int)
+
+    def test_read_penguin_data_contents(self):
+        """Check that each year's list contains dictionaries."""
+        result = read_penguin_data("penguins.csv")
+        for year, penguins in result.items():
+            self.assertIsInstance(penguins, list)
+            if penguins:  # only check if list is not empty
+                self.assertIsInstance(penguins[0], dict)
+
+    def test_read_penguin_data_missing_data(self):
+        """Ensure function skips rows with missing numeric data (edge case)."""
+        result = read_penguin_data("penguins.csv")
+        for year, penguins in result.items():
+            for p in penguins:
+                self.assertTrue("flipper_length_mm" in p)
+                self.assertTrue("body_mass_g" in p)
+
+    # ---------- calculate_avg_flipper_by_year ----------
+    def test_avg_flipper_basic(self):
+        """Check average flipper length calculation."""
+        result = calculate_avg_flipper_by_year(self.sample_data)
+        self.assertEqual(result[2007], 185.0)
+        self.assertEqual(result[2008], 205.0)
+
+    def test_avg_flipper_is_dict(self):
+        """Ensure output is a dictionary."""
+        result = calculate_avg_flipper_by_year(self.sample_data)
+        self.assertIsInstance(result, dict)
+
+    def test_avg_flipper_edge_empty(self):
+        """Handle empty dataset gracefully."""
+        result = calculate_avg_flipper_by_year({})
+        self.assertEqual(result, {})
+
+    def test_avg_flipper_single_entry(self):
+        """Handle dataset with one penguin."""
+        result = calculate_avg_flipper_by_year({
+            2007: [{"flipper_length_mm": 180.0, "body_mass_g": 3500.0}]
+        })
+        self.assertEqual(result[2007], 180.0)
+
+    # ---------- calculate_avg_body_mass_by_year ----------
+    def test_avg_body_mass_basic(self):
+        """Check average body mass calculation."""
+        result = calculate_avg_body_mass_by_year(self.sample_data)
+        self.assertEqual(result[2007], 3750.0)
+        self.assertEqual(result[2008], 4150.0)
+
+    def test_avg_body_mass_is_dict(self):
+        """Ensure output is a dictionary."""
+        result = calculate_avg_body_mass_by_year(self.sample_data)
+        self.assertIsInstance(result, dict)
+
+    def test_avg_body_mass_edge_empty(self):
+        """Handle empty dataset gracefully."""
+        result = calculate_avg_body_mass_by_year({})
+        self.assertEqual(result, {})
+
+    def test_avg_body_mass_single_entry(self):
+        """Handle dataset with one penguin."""
+        result = calculate_avg_body_mass_by_year({
+            2009: [{"flipper_length_mm": 200.0, "body_mass_g": 4000.0}]
+        })
+        self.assertEqual(result[2009], 4000.0)
+
+    # ---------- write_results_to_csv ----------
+    def test_write_results_creates_file(self):
+        """Check that CSV file is created."""
+        results_flipper = {2007: 185.0}
+        results_mass = {2007: 3750.0}
+        write_results_to_csv(results_flipper, results_mass)
+        self.assertTrue(os.path.exists("penguin_results.csv"))
+        os.remove("penguin_results.csv")
+
+    def test_write_results_file_contents(self):
+        """Check that output CSV contains correct header."""
+        results_flipper = {2007: 185.0}
+        results_mass = {2007: 3750.0}
+        write_results_to_csv(results_flipper, results_mass)
+        with open("penguin_results.csv", newline="") as f:
+            reader = csv.reader(f)
+            header = next(reader)
+            self.assertEqual(header, ["Year", "Avg Flipper Length (mm)", "Avg Body Mass (g)"])
+        os.remove("penguin_results.csv")
 
 def main():
     data = read_penguin_data("penguins.csv")
@@ -120,4 +200,6 @@ def main():
     print("Average Body Mass per Year:", results_mass)
 
 if __name__ == "__main__":
-    main()
+    main() 
+    import unittest
+    unittest.main()
