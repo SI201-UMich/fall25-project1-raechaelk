@@ -41,14 +41,13 @@ def calculate_avg_flipper_by_year(data):
         total = 0
         count = 0
         for p in penguins:
-            species = p.get("species", "")
-            if "flipper_length_mm" in p:
+            if p.get("species") == "Adelie" and "flipper_length_mm" in p:
                 total += p["flipper_length_mm"]
                 count += 1
+
         if count > 0:
             avg_flipper[year] = float(f"{total / count:.2f}")
     return avg_flipper
-
 
 def calculate_avg_body_mass_by_year(data):
     avg_mass = {}
@@ -56,10 +55,11 @@ def calculate_avg_body_mass_by_year(data):
         total = 0
         count = 0
         for p in penguins:
-            island = p.get("island", "")
-            if "body_mass_g" in p:
+            # Only count penguins from Dream island with valid body mass
+            if p.get("island") == "Dream" and "body_mass_g" in p:
                 total += p["body_mass_g"]
                 count += 1
+
         if count > 0:
             avg_mass[year] = float(f"{total / count:.2f}")
     return avg_mass
